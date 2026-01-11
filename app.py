@@ -1,4 +1,6 @@
 import streamlit as st
+from utils.ats_matcher import extract_skills_from_text, match_skills
+
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.section_extractor import extract_sections
@@ -7,7 +9,11 @@ st.set_page_config(page_title="AI Resume Analyzer")
 st.title("AI Resume Analyzer")
 
 resume_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
-job_description = st.text_area("Paste Job Description")
+st.subheader("Job Description")
+job_description = st.text_area(
+    "Paste the job description here",
+    height=200
+)
 
 if st.button("Analyze Resume"):
     if resume_file is not None:
@@ -22,11 +28,28 @@ if st.button("Analyze Resume"):
         cleaned_text = clean_text(raw_text)
 
         # 3. Extract sections
-        sections = extract_sections(raw_text)
+        sections = extract_sections(cleaned_text)
 
-        sections["skills"] = clean_text(sections["skills"])
-        sections["education"] = clean_text(sections["education"])
-        sections["experience"] = clean_text(sections["experience"])
+        st.subheader("ATS Match Result")
+
+        resume_skills = extract_skills_from_text(cleaned_text)
+
+        jd_text = job_description.lower()
+        jd_skills = extract_skills_from_text(jd_text)
+
+        match_percentage, matched_skills, missing_skills = match_skills(
+            resume_skills,
+            jd_skills
+        )
+
+        st.metric("ATS Match %", f"{match_percentage}%")
+
+        st.write("✅ Matched Skills")
+        st.write(matched_skills if matched_skills else "None")
+
+        st.write("❌ Missing Skills")
+        st.write(missing_skills if missing_skills else "None")
+        
 
         # 4. Display sections
         st.subheader("Extracted Resume Sections")
