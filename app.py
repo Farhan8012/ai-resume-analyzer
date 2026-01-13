@@ -11,7 +11,7 @@ from utils.ats_matcher import SUGGESTION_TEMPLATES
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.section_extractor import extract_sections
-
+from utils.semantic_matcher import calculate_semantic_match
 st.set_page_config(page_title="AI Resume Analyzer")
 st.title("AI Resume Analyzer")
 
@@ -39,11 +39,40 @@ if st.button("Analyze Resume"):
 
         resume_sections = sections  # lock extracted resume sections
  
-
-
         st.subheader("ATS Match Result")
 
+        # 1. Keyword Match (Strict ATS)
         resume_skills = extract_skills_from_text(cleaned_text)
+        jd_text = job_description.lower()
+        jd_skills = extract_skills_from_text(jd_text)
+        
+        # Calculate strict match
+        match_percentage, matched_skills, missing_skills = match_skills(resume_skills, jd_skills)
+
+        # 2. Semantic Match (AI Analysis)
+        semantic_match = calculate_semantic_match(cleaned_text, jd_text)
+
+        # 3. Display Scores Side-by-Side
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric(label="ATS Keyword Match", value=f"{match_percentage}%", delta="Strict")
+        with col2:
+            st.metric(label="Semantic Match (AI)", value=f"{semantic_match}%", delta="Smart")
+
+        # 4. Smart Feedback
+        if semantic_match > match_percentage + 15:
+            st.info("💡 **Insight:** Your resume is contextually relevant to this job, but you are missing specific keywords. Add the missing skills below to pass the automated filters.")
+        elif match_percentage > semantic_match + 15:
+            st.warning("⚠️ **Warning:** You have the keywords, but the context of your resume doesn't strongly match the job description. Ensure your bullet points support your skills.")
+
+        st.divider() # Adds a nice visual line
+
+        st.write("✅ **Matched Skills**")
+        st.write(matched_skills if matched_skills else "None")
+
+        st.write("❌ **Missing Skills**")
+        st.write(missing_skills if missing_skills else "None")
+
 
         jd_text = job_description.lower()
         jd_skills = extract_skills_from_text(jd_text)
