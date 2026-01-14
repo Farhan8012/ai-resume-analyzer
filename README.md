@@ -1,4 +1,55 @@
-### Day 2
+# 🚀 AI Resume Analyzer (International Level)
+
+> **A Dual-Engine Resume Analysis Platform built with Python, Streamlit, and NLP.** > *Mimics real-world ATS systems while providing "Semantic" feedback that keywords miss.*
+
+
+## 🧠 The Problem
+Traditional Resume Parsers (ATS) are dumb. They only look for exact keywords.
+- If a job asks for **"Machine Learning"** and you write **"ML"**, you get a **0% score**.
+- If you copy-paste the Job Description in white text, you get **100%**.
+
+## 💡 The Solution: Dual-Engine Logic
+This project fixes that by running **Two Analysis Engines** side-by-side:
+
+| Feature | Engine 1: The "Strict" ATS | Engine 2: The "Smart" AI |
+| :--- | :--- | :--- |
+| **Technology** | Keyword Matching (Python Set Operations) | Vector Embeddings (TF-IDF + Cosine Similarity) |
+| **Logic** | Checks for exact word matches (e.g., "Python", "SQL"). | Checks for *contextual meaning* and relevance. |
+| **Goal** | Tells you if you will pass the **Robot**. | Tells you if you are actually **Qualified**. |
+
+---
+
+## ✨ Key Features (Implemented)
+- **📄 PDF Parsing:** Extracts text from PDF resumes while preserving structure.
+- **🧹 NLP Cleaning:** Removes special characters and formatting noise.
+- **🔍 Smart Section Extraction:** Automatically identifies Skills, Education, and Experience sections.
+- **📊 Dual Scoring System:** Displays "Keyword Match" vs. "Semantic Match" scores side-by-side.
+- **📉 Resume Quality Check:**
+    - Flags bullet points that lack **Quantification** (numbers/metrics).
+    - Detects skills listed but **not demonstrated** in the Experience section.
+
+---
+
+## 🛠️ Tech Stack
+- **Frontend:** Streamlit
+- **Backend:** Python
+- **NLP & AI:** Scikit-Learn (TF-IDF), NLTK, Regex
+- **PDF Processing:** PDFPlumber
+
+---
+
+## 🚀 How to Run Locally
+
+1. **Clone the Repo**
+   ```bash
+   git clone [https://github.com/Farhan8012/ai-resume-analyzer.git](https://github.com/Farhan8012/ai-resume-analyzer.git)
+   cd ai-resume-analyzer### Day 2
 - Implemented PDF resume parsing
 - Cleaned extracted text using NLP preprocessing
 - Extracted structured resume sections (Skills, Education, Experience)
+
+2. install dependencies
+   pip install -r requirements.txt
+
+3. run the app
+   streamlit run app.py
