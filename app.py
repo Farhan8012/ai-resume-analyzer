@@ -1,6 +1,9 @@
 import streamlit as st
+
+from utils.visualizer import plot_gauge_chart, plot_skills_gap
 from utils.ats_matcher import (
     extract_skills_from_text,
+    get_learning_link,
     match_skills,
     find_weak_bullets,
     find_unquantified_bullets,
@@ -27,130 +30,115 @@ if st.button("Analyze Resume"):
         # 1. Extract text
         raw_text = extract_text_from_pdf(resume_file)
 
-        # 🔍 DEBUG: show raw extracted text
-        st.subheader("DEBUG: Raw Extracted Text")
-        st.text(raw_text[:2000])
-
         # 2. Clean text
         cleaned_text = clean_text(raw_text)
 
         # 3. Extract sections
         sections = extract_sections(cleaned_text)
 
-        resume_sections = sections  # lock extracted resume sections
- 
+        # 4. ATS & Semantic Analysis
         st.subheader("ATS Match Result")
 
-        # 1. Keyword Match (Strict ATS)
+        # A. Strict Match
         resume_skills = extract_skills_from_text(cleaned_text)
         jd_text = job_description.lower()
         jd_skills = extract_skills_from_text(jd_text)
         
-        # Calculate strict match
         match_percentage, matched_skills, missing_skills = match_skills(resume_skills, jd_skills)
 
-        # 2. Semantic Match (AI Analysis)
-        semantic_match = calculate_semantic_match(cleaned_text, jd_text)
+        # B. Semantic Match
+        semantic_score = calculate_semantic_match(cleaned_text, jd_text)
 
-        # 3. Display Scores Side-by-Side
-        col1, col2 = st.columns(2)
+        
+       # C. Display Scores (With Interactive Gauge)
+        st.subheader("Match Score Analysis")
+
+        col1, col2 = st.columns([1, 1]) # Equal width columns
+
         with col1:
-            st.metric(label="ATS Keyword Match", value=f"{match_percentage}%", delta="Strict")
+            # Display the Gauge Chart for the Strict ATS Score
+            fig = plot_gauge_chart(match_percentage)
+            st.plotly_chart(fig, use_container_width=True)
+            st.caption("**Strict Match:** Based on exact keywords found.")
+
         with col2:
-            st.metric(label="Semantic Match (AI)", value=f"{semantic_match}%", delta="Smart")
-
-        # 4. Smart Feedback
-        if semantic_match > match_percentage + 15:
-            st.info("💡 **Insight:** Your resume is contextually relevant to this job, but you are missing specific keywords. Add the missing skills below to pass the automated filters.")
-        elif match_percentage > semantic_match + 15:
-            st.warning("⚠️ **Warning:** You have the keywords, but the context of your resume doesn't strongly match the job description. Ensure your bullet points support your skills.")
-
-        st.divider() # Adds a nice visual line
-
-        st.write("✅ **Matched Skills**")
-        st.write(matched_skills if matched_skills else "None")
-
-        st.write("❌ **Missing Skills**")
-        st.write(missing_skills if missing_skills else "None")
+            # Keep the Metric for the AI Score (clean contrast)
+            st.write("## ") # Spacing to align vertically
+            st.metric(label="Semantic Match (AI)", value=f"{semantic_score}%", delta="Smart Context")
+            st.caption("**Semantic Match:** Based on meaning & relevance.")
 
 
-        jd_text = job_description.lower()
-        jd_skills = extract_skills_from_text(jd_text)
+        # D. Smart Feedback
+        if semantic_score > match_percentage + 15:
+            st.info("💡 **Insight:** Your resume is contextually relevant, but missing specific keywords. Add the skills below.")
+        elif match_percentage > semantic_score + 15:
+            st.warning("⚠️ **Warning:** You have the keywords, but the context is weak. Ensure your bullet points support your skills.")
 
-        if job_description.strip():
-            match_percentage, matched_skills, missing_skills = match_skills(
-                resume_skills,
-                jd_skills
-            )
+        st.divider()
 
-            st.metric("ATS Match %", f"{match_percentage}%")
-
-            st.write("✅ Matched Skills")
+        # E. Display Skills (Only Once!)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write("✅ **Matched Skills**")
             st.write(matched_skills if matched_skills else "None")
-
-            st.write("❌ Missing Skills")
-            st.write(missing_skills if missing_skills else "None")
-
-            # ✅ Resume Quality Checks (ONLY when JD exists)
-            experience_text = resume_sections.get("experience", "")
-
-
-
-            st.subheader("DEBUG: Experience Text Used for Evidence Check")
-            st.text(experience_text)
-
-
-            st.subheader("Resume Quality Checks")
-
-            weak_bullets = find_weak_bullets(experience_text)
-            unquantified = find_unquantified_bullets(experience_text)
-            skills_no_evidence = skills_without_evidence(resume_skills, experience_text)
-
-            st.write("⚠ Weak Experience Bullets")
-            st.write(weak_bullets if weak_bullets else "None")
-
-            st.write("⚠ Bullets Without Numbers")
-            st.write(unquantified if unquantified else "None")
-
-            st.write("⚠ Skills Without Evidence")
-
-            if skills_no_evidence:
-                for skill in skills_no_evidence:
-                    st.write(f"• {skill} → Not demonstrated in experience section")
-
-                    suggestion = SUGGESTION_TEMPLATES.get(skill.lower())
-                    if suggestion:
-                        st.caption(f"💡 Example: {suggestion}")
+        with c2:
+            st.write("❌ **Missing Skills**")
+            if missing_skills:
+                for skill in missing_skills:
+                    link = get_learning_link(skill)
+                    if link:
+                        st.markdown(f"• **{skill}** ([Learn Here]({link}))")
+                    else:
+                        st.write(f"• {skill}")
             else:
                 st.write("None")
 
-            
+        # F. Skill Gap Chart
+        st.subheader("Visual Skill Gap Analysis")
+        gap_fig = plot_skills_gap(resume_skills, jd_skills)
+        st.plotly_chart(gap_fig, use_container_width=True)
 
+        st.divider()
+
+        # 5. Resume Quality Checks
+        st.subheader("Resume Quality Checks")
+        experience_text = sections.get("experience", "")
+
+        weak_bullets = find_weak_bullets(experience_text)
+        unquantified = find_unquantified_bullets(experience_text)
+        skills_no_evidence = skills_without_evidence(resume_skills, experience_text)
+
+        if not weak_bullets and not unquantified and not skills_no_evidence:
+             st.success("🎉 Incredible! Your resume bullets are strong, quantified, and backed by evidence.")
         else:
-            st.info("Please paste a Job Description to calculate ATS match.")
+            if weak_bullets:
+                st.write("⚠️ **Weak Action Verbs (Replace with Power Words)**")
+                for line in weak_bullets:
+                    st.text(f"• {line}")
 
+            if unquantified:
+                st.write("⚠️ **Bullets Without Numbers (Quantify these!)**")
+                for line in unquantified:
+                    st.text(f"• {line}")
 
-        
-        
-        
+            if skills_no_evidence:
+                st.write("⚠️ **Skills Listed but Not Demonstrated**")
+                for skill in skills_no_evidence:
+                    st.write(f"• **{skill.title()}** (Found in Skills, but not in Experience)")
+                    suggestion = SUGGESTION_TEMPLATES.get(skill.lower())
+                    if suggestion:
+                        st.caption(f"   💡 Try: *{suggestion}*")
 
-        
+        st.divider()
 
-
-        # 4. Display sections
-        st.subheader("Extracted Resume Sections")
-
-        st.write("### Skills")
-        st.write(sections.get("skills", "Not found"))
-
-        st.write("### Education")
-        st.write(sections.get("education", "Not found"))
-
-        st.write("### Experience")
-        st.write(sections.get("experience", "Not found"))
-
-        st.write("DEBUG JD Skills:", jd_skills)
-
+        # 6. Display Raw Sections (For Debugging)
+        with st.expander("View Extracted Sections"):
+            st.write("### Skills")
+            st.write(sections.get("skills", "Not found"))
+            st.write("### Education")
+            st.write(sections.get("education", "Not found"))
+            st.write("### Experience")
+            st.write(sections.get("experience", "Not found"))
 
     
 
