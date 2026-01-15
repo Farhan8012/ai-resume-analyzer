@@ -53,3 +53,15 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 
 3. run the app
    streamlit run app.py
+
+
+## 📅 Development Roadmap (Building in Public)
+
+- [x] **Day 1:** Project Setup & PDF Extraction
+- [x] **Day 2:** Text Cleaning & Section Segmentation
+- [x] **Day 3:** Basic ATS Keyword Matching
+- [x] **Day 4:** Resume Quality & Quantification Checks
+- [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
+- [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
+- [ ] **Day 7:** (Buffer / UI Polish)
+- [ ] **Day 8:** Gemini/OpenAI LLM Integration (Generative Feedback)
