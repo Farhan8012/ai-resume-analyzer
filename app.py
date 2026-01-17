@@ -7,24 +7,44 @@ from utils.semantic_matcher import calculate_semantic_match
 from utils.visualizer import plot_gauge_chart, plot_skills_gap
 from utils.llm_engine import get_ai_feedback
 
-# Page Config
-st.set_page_config(page_title="AI Resume Analyzer", layout="wide")
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="AI Resume Analyzer", page_icon="🚀", layout="wide")
 
-st.title("🚀 AI Resume Analyzer (International Level)")
+# --- LOAD CUSTOM CSS ---
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+try:
+    local_css("style.css")
+except FileNotFoundError:
+    st.warning("⚠️ Style file not found. Please ensure 'style.css' is in the main folder.")
+
+# --- TITLE ---
+st.title("🚀 AI Resume Analyzer (Pro Dashboard)")
 st.markdown("### Optimize your resume for ATS & Semantic Search")
 
-# 1. Inputs
-resume_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
-job_description = st.text_area("Job Description", height=200, placeholder="Paste the job description here...")
+# --- SIDEBAR (INPUTS) ---
+with st.sidebar:
+    st.header("1. Upload Resume")
+    resume_file = st.file_uploader("Upload PDF", type=["pdf"])
+    
+    st.divider()
+    
+    st.header("2. Job Description")
+    job_description = st.text_area("Paste JD here...", height=300)
+    
+    st.divider()
+    
+    analyze_button = st.button("🔍 Analyze Resume")
 
-# --- NEW: SESSION STATE MANAGEMENT ---
-# This keeps your data alive even when you click buttons
+# --- SESSION STATE ---
 if "analysis_done" not in st.session_state:
     st.session_state.analysis_done = False
     st.session_state.analysis_results = {}
 
-# 2. The "Analyze" Button Logic
-if st.button("Analyze Resume"):
+# --- MAIN LOGIC ---
+if analyze_button:
     if resume_file is not None and job_description:
         with st.spinner("Processing..."):
             # A. Extract & Clean
@@ -47,7 +67,7 @@ if st.button("Analyze Resume"):
             unquantified = find_unquantified_bullets(experience_text)
             skills_no_evidence = skills_without_evidence(resume_skills, experience_text)
 
-            # --- SAVE RESULTS TO MEMORY (SESSION STATE) ---
+            # SAVE RESULTS
             st.session_state.analysis_results = {
                 "match_percentage": match_percentage,
                 "semantic_score": semantic_score,
@@ -65,13 +85,13 @@ if st.button("Analyze Resume"):
             st.session_state.analysis_done = True
             
     else:
-        st.warning("Please upload a resume and paste a job description.")
+        st.sidebar.error("⚠️ Please upload a resume and paste a JD.")
 
-# 3. The Display Logic (Runs if analysis is done)
+# --- DISPLAY RESULTS (Main Area) ---
 if st.session_state.analysis_done:
     res = st.session_state.analysis_results
     
-    # --- VISUALIZATION SECTION ---
+    # 1. Match Score Analysis
     st.subheader("Match Score Analysis")
     col1, col2 = st.columns([1, 1])
     
@@ -93,7 +113,7 @@ if st.session_state.analysis_done:
 
     st.divider()
 
-    # --- SKILLS BREAKDOWN ---
+    # 2. Skills Breakdown
     c1, c2 = st.columns(2)
     with c1:
         st.write("✅ **Matched Skills**")
@@ -112,26 +132,26 @@ if st.session_state.analysis_done:
 
     st.divider()
 
-    # --- GAP ANALYSIS CHART ---
+    # 3. Gap Analysis Chart
     st.subheader("Visual Skill Gap Analysis")
     gap_fig = plot_skills_gap(res['resume_skills'], res['jd_skills'])
     st.plotly_chart(gap_fig, use_container_width=True)
 
     st.divider()
 
-    # --- RESUME QUALITY CHECKS ---
+    # 4. Resume Quality Checks
     st.subheader("Resume Quality Checks")
     
     if not res['weak_bullets'] and not res['unquantified'] and not res['skills_no_evidence']:
          st.success("🎉 Incredible! Your resume bullets are strong, quantified, and backed by evidence.")
     else:
         if res['weak_bullets']:
-            st.write("⚠️ **Weak Action Verbs (Replace with Power Words)**")
+            st.write("⚠️ **Weak Action Verbs**")
             for line in res['weak_bullets']:
                 st.text(f"• {line}")
         
         if res['unquantified']:
-            st.write("⚠️ **Bullets Without Numbers (Quantify these!)**")
+            st.write("⚠️ **Bullets Without Numbers**")
             for line in res['unquantified']:
                 st.text(f"• {line}")
 
@@ -145,19 +165,15 @@ if st.session_state.analysis_done:
 
     st.divider()
 
-    # --- 🤖 GENERATIVE AI SECTION (THE BRAIN) ---
+    # 5. Generative AI Section
     st.subheader("🤖 AI Career Consultant")
     
-    # We pass the saved data from session state into the button logic
     if st.button("✨ Generate Improvement Plan (Powered by Gemini)"):
         if not res['missing_skills']:
             st.success("You have all the required skills! The AI recommends applying immediately.")
         else:
-            with st.spinner("Analyzing your resume against the Job Description..."):
-                # Call the LLM function
+            with st.spinner("Analyzing with Gemini..."):
                 ai_advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
-                
-                # Display the result
                 st.markdown("### 💡 Tailored Advice")
                 st.markdown(ai_advice)
 
@@ -170,7 +186,6 @@ if st.session_state.analysis_done:
         st.write("### Experience")
         st.write(res['sections'].get("experience", "Not found"))
 
-
-        # --- DEBUG SECTION (Temporary) ---
-        st.divider()
-        
+# --- PLACEHOLDER (If no analysis yet) ---
+else:
+    st.info("👈 Upload your resume and job description in the sidebar to start!")

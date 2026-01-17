@@ -63,5 +63,8 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 4:** Resume Quality & Quantification Checks
 - [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
 - [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
-- [ ] **Day 7:** (Buffer / UI Polish)
-- [ ] **Day 8:** Gemini/OpenAI LLM Integration (Generative Feedback)
+- [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
+- [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
+- [x] **Day 7:** **Gemini AI Integration (Generative Feedback & Resume Rewriting)** 🤖
+- [ ] **Day 8:** UI Polish (Themes, Custom Styling, Dark Mode)
+- [ ] **Day 9:** Deployment (Sharing with the world)

@@ -1,0 +1,32 @@
+/* 1. Import a clean, modern font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* 2. Make buttons round and glowing */
+div.stButton > button {
+    background: linear-gradient(to right, #00C896, #00b09b);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+div.stButton > button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 200, 150, 0.4);
+}
+
+/* 3. Color the metric numbers */
+[data-testid="stMetricValue"] {
+    color: #00C896;
+}
+
+/* 4. Hide the "Made with Streamlit" footer */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
