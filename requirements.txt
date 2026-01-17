@@ -3,3 +3,5 @@ pdfplumber
 scikit-learn
 plotly
 google-generativeai
+pdfminer.six
+toml
