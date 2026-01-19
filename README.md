@@ -66,5 +66,5 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
 - [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
 - [x] **Day 7:** **Gemini AI Integration (Generative Feedback & Resume Rewriting)** 🤖
-- [ ] **Day 8:** UI Polish (Themes, Custom Styling, Dark Mode)
-- [ ] **Day 9:** Deployment (Sharing with the world)
+- [x] **Day 8:** UI Polish (Themes, Custom Styling, Dark Mode)
+- [x] **Day 9:** **Deployment (Hosting on Streamlit Cloud for Free) ☁️ [DONE!]**
