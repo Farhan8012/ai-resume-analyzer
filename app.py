@@ -1,5 +1,6 @@
 import streamlit as st
-from utils.auth import authenticate, save_user
+from utils.auth import authenticate, save_user, save_history, get_user_history
+import pandas as pd
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.section_extractor import extract_sections
@@ -48,6 +49,7 @@ def login_page():
             if user:
                 st.session_state.logged_in = True
                 st.session_state.user_name = user
+                st.session_state.user_email = email
                 st.success(f"Welcome back, {user}!")
                 st.rerun() 
             else:
@@ -76,12 +78,12 @@ def main_dashboard():
         if st.button("Logout"):
             st.session_state.logged_in = False
             st.session_state.user_name = ""
+            if 'user_email' in st.session_state:
+                del st.session_state.user_email
             st.rerun()
         st.divider()
 
-    # --- YOUR ORIGINAL DASHBOARD CODE STARTS HERE ---
-    
-    # Inputs
+    # --- INPUTS (Sidebar) ---
     with st.sidebar:
         st.header("1. Upload Resume")
         resume_file = st.file_uploader("Upload PDF", type=["pdf"])
@@ -91,114 +93,151 @@ def main_dashboard():
         st.divider()
         analyze_button = st.button("🔍 Analyze Resume")
 
-    st.title("🚀 AI Resume Analyzer (Pro Dashboard)")
+    # --- NEW: TABS FOR DASHBOARD ---
+    tab1, tab2 = st.tabs(["📊 Current Analysis", "📈 Progress History"])
 
-    if analyze_button:
-        if resume_file is not None and job_description:
-            with st.spinner("Processing..."):
-                # Processing Logic
-                raw_text = extract_text_from_pdf(resume_file)
-                cleaned_text = clean_text(raw_text)
-                sections = extract_sections(cleaned_text)
-                
-                resume_skills = extract_skills_from_text(cleaned_text)
-                jd_text = job_description.lower()
-                jd_skills = extract_skills_from_text(jd_text)
-                match_percentage, matched_skills, missing_skills = match_skills(resume_skills, jd_skills)
-                semantic_score = calculate_semantic_match(cleaned_text, jd_text)
-                
-                experience_text = sections.get("experience", "")
-                weak_bullets = find_weak_bullets(experience_text)
-                unquantified = find_unquantified_bullets(experience_text)
-                skills_no_evidence = skills_without_evidence(resume_skills, experience_text)
+    # --- TAB 1: CURRENT ANALYSIS (Your Original Logic) ---
+    with tab1:
+        st.title("🚀 AI Resume Analyzer (Pro Dashboard)")
 
-                st.session_state.analysis_results = {
-                    "match_percentage": match_percentage,
-                    "semantic_score": semantic_score,
-                    "matched_skills": matched_skills,
-                    "missing_skills": missing_skills,
-                    "resume_skills": resume_skills,
-                    "jd_skills": jd_skills,
-                    "cleaned_text": cleaned_text,
-                    "jd_text": jd_text,
-                    "weak_bullets": weak_bullets,
-                    "unquantified": unquantified,
-                    "skills_no_evidence": skills_no_evidence,
-                    "sections": sections
-                }
-                st.session_state.analysis_done = True
-        else:
-            st.sidebar.error("⚠️ Please upload a resume and paste a JD.")
+        if analyze_button:
+            if resume_file is not None and job_description:
+                with st.spinner("Processing..."):
+                    # Processing Logic
+                    raw_text = extract_text_from_pdf(resume_file)
+                    cleaned_text = clean_text(raw_text)
+                    sections = extract_sections(cleaned_text)
+                    
+                    resume_skills = extract_skills_from_text(cleaned_text)
+                    jd_text = job_description.lower()
+                    jd_skills = extract_skills_from_text(jd_text)
+                    match_percentage, matched_skills, missing_skills = match_skills(resume_skills, jd_skills)
+                    semantic_score = calculate_semantic_match(cleaned_text, jd_text)
+                    
+                    experience_text = sections.get("experience", "")
+                    weak_bullets = find_weak_bullets(experience_text)
+                    unquantified = find_unquantified_bullets(experience_text)
+                    skills_no_evidence = skills_without_evidence(resume_skills, experience_text)
 
-    # Display Results
-    if st.session_state.analysis_done:
-        res = st.session_state.analysis_results
-        
-        st.subheader("Match Score Analysis")
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            fig = plot_gauge_chart(res["match_percentage"])
-            st.plotly_chart(fig, use_container_width=True)
-        with col2:
-            st.write("## ") 
-            st.metric(label="Semantic Match (AI)", value=f"{res['semantic_score']}%", delta="Smart Context")
+                    st.session_state.analysis_results = {
+                        "match_percentage": match_percentage,
+                        "semantic_score": semantic_score,
+                        "matched_skills": matched_skills,
+                        "missing_skills": missing_skills,
+                        "resume_skills": resume_skills,
+                        "jd_skills": jd_skills,
+                        "cleaned_text": cleaned_text,
+                        "jd_text": jd_text,
+                        "weak_bullets": weak_bullets,
+                        "unquantified": unquantified,
+                        "skills_no_evidence": skills_no_evidence,
+                        "sections": sections
+                    }
+                    st.session_state.analysis_done = True
+                    
+                    # --- NEW: SAVE TO HISTORY ---
+                    # We use the email (if available) or username as the ID
+                    user_id = st.session_state.get('user_email', st.session_state.user_name)
+                    save_history(user_id, match_percentage, semantic_score, missing_skills)
+                    st.toast("✅ Result saved to history!")
+                    
+            else:
+                st.sidebar.error("⚠️ Please upload a resume and paste a JD.")
+
+        # Display Results
+        if st.session_state.analysis_done:
+            res = st.session_state.analysis_results
             
-        st.divider()
+            st.subheader("Match Score Analysis")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                fig = plot_gauge_chart(res["match_percentage"])
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                st.write("## ") 
+                st.metric(label="Semantic Match (AI)", value=f"{res['semantic_score']}%", delta="Smart Context")
+                
+            st.divider()
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.write("✅ **Matched Skills**")
-            st.write(res['matched_skills'] if res['matched_skills'] else "None")
-        with c2:
-            st.write("❌ **Missing Skills**")
-            if res['missing_skills']:
-                for skill in res['missing_skills']:
-                    link = get_learning_link(skill)
-                    if link:
-                        st.markdown(f"• **{skill}** ([Learn Here]({link}))")
-                    else:
-                        st.write(f"• {skill}")
-            else:
-                st.write("None")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.write("✅ **Matched Skills**")
+                st.write(res['matched_skills'] if res['matched_skills'] else "None")
+            with c2:
+                st.write("❌ **Missing Skills**")
+                if res['missing_skills']:
+                    for skill in res['missing_skills']:
+                        link = get_learning_link(skill)
+                        if link:
+                            st.markdown(f"• **{skill}** ([Learn Here]({link}))")
+                        else:
+                            st.write(f"• {skill}")
+                else:
+                    st.write("None")
 
-        st.divider()
+            st.divider()
 
-        st.subheader("Visual Skill Gap Analysis")
-        gap_fig = plot_skills_gap(res['resume_skills'], res['jd_skills'])
-        st.plotly_chart(gap_fig, use_container_width=True)
+            st.subheader("Visual Skill Gap Analysis")
+            gap_fig = plot_skills_gap(res['resume_skills'], res['jd_skills'])
+            st.plotly_chart(gap_fig, use_container_width=True)
 
-        st.divider()
+            st.divider()
 
-        st.subheader("Resume Quality Checks")
-        if res['weak_bullets']:
-            st.write("⚠️ **Weak Action Verbs**")
-            for line in res['weak_bullets']:
-                st.text(f"• {line}")
+            st.subheader("Resume Quality Checks")
+            if res['weak_bullets']:
+                st.write("⚠️ **Weak Action Verbs**")
+                for line in res['weak_bullets']:
+                    st.text(f"• {line}")
+            
+            if res['unquantified']:
+                st.write("⚠️ **Bullets Without Numbers**")
+                for line in res['unquantified']:
+                    st.text(f"• {line}")
+
+            if res['skills_no_evidence']:
+                st.write("⚠️ **Skills Listed but Not Demonstrated**")
+                for skill in res['skills_no_evidence']:
+                    st.write(f"• **{skill.title()}** (Found in Skills, but not in Experience)")
+                    suggestion = SUGGESTION_TEMPLATES.get(skill.lower())
+                    if suggestion:
+                        st.caption(f"   💡 Try: *{suggestion}*")
+
+            st.divider()
+
+            st.subheader("🤖 AI Career Consultant")
+            if st.button("✨ Generate Improvement Plan (Powered by Gemini)"):
+                if not res['missing_skills']:
+                    st.success("You have all the required skills!")
+                else:
+                    with st.spinner("Analyzing with Gemini..."):
+                        ai_advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
+                        st.markdown("### 💡 Tailored Advice")
+                        st.markdown(ai_advice)
+
+        else:
+            st.info("👈 Upload resume to see analysis.")
+
+    # --- NEW: TAB 2 (PROGRESS HISTORY) ---
+    with tab2:
+        st.header("📈 Your Progress Over Time")
         
-        if res['unquantified']:
-            st.write("⚠️ **Bullets Without Numbers**")
-            for line in res['unquantified']:
-                st.text(f"• {line}")
-
-        if res['skills_no_evidence']:
-            st.write("⚠️ **Skills Listed but Not Demonstrated**")
-            for skill in res['skills_no_evidence']:
-                st.write(f"• **{skill.title()}** (Found in Skills, but not in Experience)")
-                suggestion = SUGGESTION_TEMPLATES.get(skill.lower())
-                if suggestion:
-                    st.caption(f"   💡 Try: *{suggestion}*")
-
-        st.divider()
-
-        st.subheader("🤖 AI Career Consultant")
-        if st.button("✨ Generate Improvement Plan (Powered by Gemini)"):
-            if not res['missing_skills']:
-                st.success("You have all the required skills!")
-            else:
-                with st.spinner("Analyzing with Gemini..."):
-                    ai_advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
-                    st.markdown("### 💡 Tailored Advice")
-                    st.markdown(ai_advice)
+        # Get history using email (or username as fallback)
+        user_id = st.session_state.get('user_email', st.session_state.user_name)
+        history = get_user_history(user_id)
+        
+        if history:
+            # Convert to DataFrame for easy plotting
+            df = pd.DataFrame(history)
+            
+            # Create a line chart
+            st.write("### ATS Score vs Semantic Score")
+            st.line_chart(df.set_index("date")[["match_score", "semantic_score"]])
+            
+            # Show the raw data table
+            st.write("### Detailed History Log")
+            st.dataframe(df)
+        else:
+            st.info("No history found yet. Analyze a resume to start tracking!")
 
 # --- 3. THE CONTROLLER ---
 if st.session_state.logged_in:

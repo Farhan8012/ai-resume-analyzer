@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 # The file where we store user data
 DB_FILE = "users.json"
@@ -41,3 +42,32 @@ def authenticate(email, password):
     if email in users and users[email]["password"] == password:
         return users[email]["name"]
     return None
+
+def save_history(email, match_score, semantic_score, missing_skills):
+    """Saves the analysis result to the user's history."""
+    users = load_users()
+    
+    if email in users:
+        if "history" not in users[email]:
+            users[email]["history"] = []
+            
+        # Create a record
+        record = {
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "match_score": match_score,
+            "semantic_score": semantic_score,
+            "missing_count": len(missing_skills)
+        }
+        
+        users[email]["history"].append(record)
+        
+        # Save back to file
+        with open(DB_FILE, "w") as f:
+            json.dump(users, f)
+            
+def get_user_history(email):
+    """Returns the list of past analysis records."""
+    users = load_users()
+    if email in users and "history" in users[email]:
+        return users[email]["history"]
+    return []

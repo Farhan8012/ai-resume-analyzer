@@ -5,3 +5,4 @@ plotly
 google-generativeai
 pdfminer.six
 toml
+pandas
