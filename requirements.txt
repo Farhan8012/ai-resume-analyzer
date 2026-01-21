@@ -6,3 +6,4 @@ google-generativeai
 pdfminer.six
 toml
 pandas
+reportlab

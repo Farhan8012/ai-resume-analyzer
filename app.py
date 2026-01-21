@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.auth import authenticate, save_user, save_history, get_user_history
 import pandas as pd
+from utils.report_generator import generate_pdf_report
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.section_extractor import extract_sections
@@ -93,10 +94,10 @@ def main_dashboard():
         st.divider()
         analyze_button = st.button("🔍 Analyze Resume")
 
-    # --- NEW: TABS FOR DASHBOARD ---
+    # --- TABS FOR DASHBOARD ---
     tab1, tab2 = st.tabs(["📊 Current Analysis", "📈 Progress History"])
 
-    # --- TAB 1: CURRENT ANALYSIS (Your Original Logic) ---
+    # --- TAB 1: CURRENT ANALYSIS ---
     with tab1:
         st.title("🚀 AI Resume Analyzer (Pro Dashboard)")
 
@@ -135,8 +136,7 @@ def main_dashboard():
                     }
                     st.session_state.analysis_done = True
                     
-                    # --- NEW: SAVE TO HISTORY ---
-                    # We use the email (if available) or username as the ID
+                    # Save to History
                     user_id = st.session_state.get('user_email', st.session_state.user_name)
                     save_history(user_id, match_percentage, semantic_score, missing_skills)
                     st.toast("✅ Result saved to history!")
@@ -210,35 +210,56 @@ def main_dashboard():
                     st.success("You have all the required skills!")
                 else:
                     with st.spinner("Analyzing with Gemini..."):
-                        ai_advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
+                        # Get advice
+                        advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
+                        # SAVE IT TO SESSION STATE (Crucial for PDF)
+                        st.session_state.ai_advice = advice
                         st.markdown("### 💡 Tailored Advice")
-                        st.markdown(ai_advice)
+                        st.markdown(advice)
+
+            st.divider()
+
+            # --- DOWNLOAD REPORT BUTTON ---
+            st.subheader("📄 Download Report")
+            
+            if "ai_advice" not in st.session_state:
+                st.session_state.ai_advice = "AI Advice was not generated for this session."
+            
+            if st.button("Prepare PDF Report"):
+                with st.spinner("Generating PDF..."):
+                    pdf_data = generate_pdf_report(
+                        st.session_state.user_name,
+                        res['match_percentage'],
+                        res['semantic_score'],
+                        res['missing_skills'],
+                        st.session_state.ai_advice
+                    )
+                    
+                    st.download_button(
+                        label="⬇️ Download Full Report (PDF)",
+                        data=pdf_data,
+                        file_name="Resume_Analysis_Report.pdf",
+                        mime="application/pdf"
+                    )
 
         else:
             st.info("👈 Upload resume to see analysis.")
 
-    # --- NEW: TAB 2 (PROGRESS HISTORY) ---
+    # --- TAB 2: PROGRESS HISTORY ---
     with tab2:
         st.header("📈 Your Progress Over Time")
         
-        # Get history using email (or username as fallback)
         user_id = st.session_state.get('user_email', st.session_state.user_name)
         history = get_user_history(user_id)
         
         if history:
-            # Convert to DataFrame for easy plotting
             df = pd.DataFrame(history)
-            
-            # Create a line chart
             st.write("### ATS Score vs Semantic Score")
             st.line_chart(df.set_index("date")[["match_score", "semantic_score"]])
-            
-            # Show the raw data table
             st.write("### Detailed History Log")
             st.dataframe(df)
         else:
             st.info("No history found yet. Analyze a resume to start tracking!")
-
 # --- 3. THE CONTROLLER ---
 if st.session_state.logged_in:
     main_dashboard()
