@@ -70,3 +70,33 @@ def plot_skills_gap(resume_skills, jd_skills):
     )
     
     return fig
+
+def plot_comparison(match_a, match_b, semantic_a, semantic_b):
+    """Plots a grouped bar chart comparing two resumes."""
+    fig = go.Figure()
+
+    # Resume A Bars
+    fig.add_trace(go.Bar(
+        x=['ATS Match', 'Semantic Match'],
+        y=[match_a, semantic_a],
+        name='Resume A',
+        marker_color='#00C896' # Green
+    ))
+
+    # Resume B Bars
+    fig.add_trace(go.Bar(
+        x=['ATS Match', 'Semantic Match'],
+        y=[match_b, semantic_b],
+        name='Resume B',
+        marker_color='#FF4B4B' # Red/Pink
+    ))
+
+    fig.update_layout(
+        barmode='group',
+        title="Resume A vs. Resume B Score Comparison",
+        yaxis_title="Score (%)",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
+    )
+    return fig

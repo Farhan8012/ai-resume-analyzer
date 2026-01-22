@@ -69,4 +69,6 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 8:** UI Polish (Themes, Custom Styling, Dark Mode)
 - [x] **Day 9:** **Deployment (Hosting on Streamlit Cloud for Free) ☁️ [DONE!]**
 - [x] **Day 10:** **User Authentication (Login/Signup Logic)** 🔐
-- [ ] **Day 11:** **History Tracking (Saving Resume Scores Over Time)** 📈
+- [x] **Day 11:** History Tracking (Saving Resume Scores Over Time) 📈
+- [x] **Day 12:** PDF Report Generation (Downloadable Analysis) 📄
+- [x] **Day 13:** **Compare Mode (A/B Testing for Resumes)** ⚔️
