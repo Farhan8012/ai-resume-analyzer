@@ -23,7 +23,7 @@ def ui_footer():
     st.markdown(
         """
         <div style="text-align: center; color: grey; font-size: 14px;">
-            Built with ❤️ by <b>Farhan Ansari</b> | Powered by <b>Gemini Pro</b> & <b>Streamlit</b>
+            Built with ❤️ by <b>Farhan Ansari</b> | Powered by <b>Google Gemini</b> & <b>Streamlit</b>
         </div>
         """, unsafe_allow_html=True
     )
@@ -101,7 +101,7 @@ def login_page():
                         st.error("User already exists!")
                 else:
                     st.warning("Please fill all fields.")
-ui_footer()
+
 # --- 2. MAIN DASHBOARD FUNCTION ---
 def main_dashboard():
     # Sidebar Logout
@@ -282,8 +282,8 @@ def main_dashboard():
             st.subheader("📊 Head-to-Head Comparison")
             fig = plot_comparison(res['match_a'], res['match_b'], res['sem_a'], res['sem_b'])
             st.plotly_chart(fig, use_container_width=True)
-ui_footer()            
-# --- 3. THE CONTROLLER ---
+         
+
 # --- 3. THE CONTROLLER (WITH SAFETY NET) ---
 if __name__ == "__main__":
     try:
