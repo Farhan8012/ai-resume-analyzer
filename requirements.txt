@@ -7,3 +7,5 @@ pdfminer.six
 toml
 pandas
 reportlab
+streamlit-lottie
+requests

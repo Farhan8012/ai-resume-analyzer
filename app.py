@@ -9,6 +9,24 @@ from utils.ats_matcher import match_skills, extract_skills_from_text, get_learni
 from utils.semantic_matcher import calculate_semantic_match
 from utils.visualizer import plot_gauge_chart, plot_skills_gap
 from utils.llm_engine import get_ai_feedback
+import requests
+from streamlit_lottie import st_lottie
+
+def load_lottieurl(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+def ui_footer():
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; color: grey; font-size: 14px;">
+            Built with ❤️ by <b>Farhan Ansari</b> | Powered by <b>Gemini Pro</b> & <b>Streamlit</b>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="🚀", layout="wide")
@@ -35,42 +53,55 @@ if "analysis_results" not in st.session_state:
 
 # --- 1. LOGIN PAGE FUNCTION ---
 def login_page():
+    # Load the animation (A cool AI robot)
+    lottie_ai = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_V9t630.json")
+
     st.title("🚀 AI Resume Analyzer")
-    st.subheader("Login to access the Pro Dashboard")
     
-    tab1, tab2 = st.tabs(["Login", "Sign Up"])
+    # Create two columns
+    col1, col2 = st.columns([1, 2]) # Left is smaller (animation), Right is wider (login)
 
-    # LOGIN TAB
-    with tab1:
-        email = st.text_input("Email Address", key="login_email")
-        password = st.text_input("Password", type="password", key="login_pass")
+    with col1:
+        # Display animation
+        if lottie_ai:
+            st_lottie(lottie_ai, height=250, key="ai_anim")
+    
+    with col2:
+        st.subheader("Login to access the Pro Dashboard")
         
-        if st.button("Login"):
-            user = authenticate(email, password)
-            if user:
-                st.session_state.logged_in = True
-                st.session_state.user_name = user
-                st.session_state.user_email = email
-                st.success(f"Welcome back, {user}!")
-                st.rerun() 
-            else:
-                st.error("Invalid email or password")
+        tab1, tab2 = st.tabs(["Login", "Sign Up"])
 
-    # SIGN UP TAB
-    with tab2:
-        new_name = st.text_input("Full Name")
-        new_email = st.text_input("Email Address", key="signup_email")
-        new_pass = st.text_input("Password", type="password", key="signup_pass")
-        
-        if st.button("Create Account"):
-            if new_name and new_email and new_pass:
-                if save_user(new_email, new_pass, new_name):
-                    st.success("Account created! Please go to Login tab.")
+        # LOGIN TAB
+        with tab1:
+            email = st.text_input("Email Address", key="login_email")
+            password = st.text_input("Password", type="password", key="login_pass")
+            
+            if st.button("Login"):
+                user = authenticate(email, password)
+                if user:
+                    st.session_state.logged_in = True
+                    st.session_state.user_name = user
+                    st.session_state.user_email = email # Store email for history
+                    st.success(f"Welcome back, {user}!")
+                    st.rerun() 
                 else:
-                    st.error("User already exists!")
-            else:
-                st.warning("Please fill all fields.")
+                    st.error("Invalid email or password")
 
+        # SIGN UP TAB
+        with tab2:
+            new_name = st.text_input("Full Name")
+            new_email = st.text_input("Email Address", key="signup_email")
+            new_pass = st.text_input("Password", type="password", key="signup_pass")
+            
+            if st.button("Create Account"):
+                if new_name and new_email and new_pass:
+                    if save_user(new_email, new_pass, new_name):
+                        st.success("Account created! Please go to Login tab.")
+                    else:
+                        st.error("User already exists!")
+                else:
+                    st.warning("Please fill all fields.")
+ui_footer()
 # --- 2. MAIN DASHBOARD FUNCTION ---
 def main_dashboard():
     # Sidebar Logout
@@ -251,9 +282,20 @@ def main_dashboard():
             st.subheader("📊 Head-to-Head Comparison")
             fig = plot_comparison(res['match_a'], res['match_b'], res['sem_a'], res['sem_b'])
             st.plotly_chart(fig, use_container_width=True)
-            
+ui_footer()            
 # --- 3. THE CONTROLLER ---
-if st.session_state.logged_in:
-    main_dashboard()
-else:
-    login_page()
+# --- 3. THE CONTROLLER (WITH SAFETY NET) ---
+if __name__ == "__main__":
+    try:
+        if st.session_state.logged_in:
+            main_dashboard()
+            ui_footer() # <--- Show footer in dashboard
+        else:
+            login_page()
+            ui_footer() # <--- Show footer in login
+            
+    except Exception as e:
+        # If ANYTHING crashes, we catch it here
+        st.error("⚠️ An unexpected error occurred. Please refresh the page.")
+        # Optionally print the error to console for you (the developer) to see
+        print(f"CRASH LOG: {e}")
