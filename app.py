@@ -7,10 +7,12 @@ from utils.text_cleaner import clean_text
 from utils.section_extractor import extract_sections
 from utils.ats_matcher import match_skills, extract_skills_from_text, get_learning_link, find_weak_bullets, find_unquantified_bullets, skills_without_evidence, SUGGESTION_TEMPLATES
 from utils.semantic_matcher import calculate_semantic_match
-from utils.visualizer import plot_gauge_chart, plot_skills_gap
+from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison
 from utils.llm_engine import get_ai_feedback
+from utils.csv_export import convert_df_to_csv
 import requests
 from streamlit_lottie import st_lottie
+import time
 
 def load_lottieurl(url):
     r = requests.get(url)
@@ -118,29 +120,40 @@ def main_dashboard():
     # --- SIDEBAR INPUTS ---
     with st.sidebar:
         st.title("🎛️ Settings")
-        mode = st.radio("Analysis Mode", ["Single Resume", "Compare (A/B Test)"])
+        # Added "Bulk Analysis" to the options
+        mode = st.radio("Analysis Mode", ["Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
         st.divider()
         
-        # JD Input (Common for both modes)
+        # JD Input (Common for all modes)
         st.header("1. Job Description")
         job_description = st.text_area("Paste JD here...", height=200)
         st.divider()
 
         # Resume Inputs
         st.header("2. Upload Resume(s)")
+        
         if mode == "Single Resume":
             resume_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
-            resume_b = None # Not used in this mode
-        else:
+            resume_b = None
+            uploaded_files = None
+            
+        elif mode == "Compare (A/B Test)":
             resume_file = st.file_uploader("Upload Resume A (PDF)", type=["pdf"], key="res_a")
             resume_b = st.file_uploader("Upload Resume B (PDF)", type=["pdf"], key="res_b")
+            uploaded_files = None
+            
+        else: # Bulk Mode
+            resume_file = None
+            resume_b = None
+            # accept_multiple_files=True allows selecting many files at once
+            uploaded_files = st.file_uploader("Upload Candidates (PDF)", type=["pdf"], accept_multiple_files=True)
 
         st.divider()
         analyze_button = st.button("🔍 Analyze")
 
-    # --- LOGIC HANDLING ---
+   # --- LOGIC HANDLING ---
     if mode == "Single Resume":
-        # ================= SINGLE MODE (Your Old Dashboard) =================
+        # ================= SINGLE MODE =================
         tab1, tab2 = st.tabs(["📊 Analysis", "📈 History"])
         
         with tab1:
@@ -180,7 +193,7 @@ def main_dashboard():
                             "skills_no_evidence": skills_no_ev
                         }
                         st.session_state.analysis_done = True
-                        st.session_state.mode = "single" # Track which mode we ran
+                        st.session_state.mode = "single"
 
                         # Save History
                         uid = st.session_state.get('user_email', st.session_state.user_name)
@@ -193,7 +206,6 @@ def main_dashboard():
             if st.session_state.analysis_done and st.session_state.get("mode") == "single":
                 res = st.session_state.analysis_results
                 
-                # Metrics
                 col1, col2 = st.columns(2)
                 with col1:
                     fig = plot_gauge_chart(res["match_percentage"])
@@ -201,7 +213,6 @@ def main_dashboard():
                 with col2:
                     st.metric("Semantic Score", f"{res['semantic_score']}%")
                 
-                # AI Advice
                 st.divider()
                 st.subheader("🤖 AI Advice")
                 if st.button("✨ Get Advice"):
@@ -210,7 +221,6 @@ def main_dashboard():
                         st.session_state.ai_advice = advice
                         st.markdown(advice)
 
-                # PDF Download (Your Day 12 Feature)
                 st.divider()
                 st.subheader("📄 Download Report")
                 if st.button("Prepare PDF"):
@@ -218,7 +228,6 @@ def main_dashboard():
                     pdf_data = generate_pdf_report(st.session_state.user_name, res['match_percentage'], res['semantic_score'], res['missing_skills'], advice_text)
                     st.download_button("⬇️ Download PDF", pdf_data, "report.pdf", "application/pdf")
 
-        # History Tab (Same as before)
         with tab2:
             st.header("📈 History")
             uid = st.session_state.get('user_email', st.session_state.user_name)
@@ -226,8 +235,8 @@ def main_dashboard():
             if hist:
                 st.line_chart(pd.DataFrame(hist).set_index("date")[["match_score", "semantic_score"]])
 
-    else:
-        # ================= COMPARE MODE (NEW!) =================
+    elif mode == "Compare (A/B Test)":
+        # ================= COMPARE MODE =================
         st.title("⚔️ Resume Battle Mode (A vs B)")
         
         if analyze_button:
@@ -247,7 +256,6 @@ def main_dashboard():
                     match_b, _, _ = match_skills(skills_b, jd_skills)
                     sem_b = calculate_semantic_match(text_b, jd_clean)
 
-                    # Save Comparison Results
                     st.session_state.compare_results = {
                         "match_a": match_a, "sem_a": sem_a,
                         "match_b": match_b, "sem_b": sem_b
@@ -257,33 +265,70 @@ def main_dashboard():
             else:
                 st.error("⚠️ Please upload BOTH resumes and a JD.")
 
-        # Display Comparison
         if st.session_state.get("compare_done") and st.session_state.get("mode") == "compare":
             res = st.session_state.compare_results
-            
-            # 1. The Winner Banner
             winner = "Resume A" if (res['match_a'] + res['sem_a']) > (res['match_b'] + res['sem_b']) else "Resume B"
             st.success(f"🏆 The Winner is: **{winner}**")
 
-            # 2. Side-by-Side Metrics
             c1, c2 = st.columns(2)
             with c1:
                 st.info("📄 Resume A")
                 st.metric("ATS Match", f"{res['match_a']}%")
-                st.metric("Semantic Match", f"{res['sem_a']}%")
             with c2:
                 st.info("📄 Resume B")
                 st.metric("ATS Match", f"{res['match_b']}%")
-                st.metric("Semantic Match", f"{res['sem_b']}%")
 
-            # 3. Comparison Chart
-            from utils.visualizer import plot_comparison
-            st.divider()
-            st.subheader("📊 Head-to-Head Comparison")
             fig = plot_comparison(res['match_a'], res['match_b'], res['sem_a'], res['sem_b'])
             st.plotly_chart(fig, use_container_width=True)
-         
 
+    else:
+        # ================= BULK MODE (HR) =================
+        st.title("📊 Bulk Resume Screening (HR Mode)")
+        
+        # Import needs to be here if not at top
+        from utils.csv_export import convert_df_to_csv 
+        
+        if analyze_button:
+            if uploaded_files and job_description:
+                results_list = []
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                total_files = len(uploaded_files)
+                
+                for i, file in enumerate(uploaded_files):
+                    status_text.text(f"Analyzing candidate {i+1} of {total_files}: {file.name}...")
+                    progress_bar.progress((i + 1) / total_files)
+                    
+                    text = clean_text(extract_text_from_pdf(file))
+                    skills = extract_skills_from_text(text)
+                    jd_clean = job_description.lower()
+                    jd_skills = extract_skills_from_text(jd_clean)
+                    match_pct, _, missing = match_skills(skills, jd_skills)
+                    sem_score = calculate_semantic_match(text, jd_clean)
+                    
+                    results_list.append({
+                        "Candidate Name": file.name,
+                        "ATS Score": match_pct,
+                        "Semantic Score": sem_score,
+                        "Total Score": match_pct + sem_score,
+                        "Missing Skills": ", ".join(list(missing)[:5]) # <--- FIXED!
+                    })
+                    time.sleep(0.5)
+
+                st.success("✅ Analysis Complete!")
+                
+                df = pd.DataFrame(results_list)
+                # Sort by Total Score (Highest first)
+                df = df.sort_values(by="Total Score", ascending=False)
+                
+                st.subheader("🏆 Candidate Leaderboard")
+                st.dataframe(df.style.highlight_max(axis=0, color='#00C896'), use_container_width=True)
+                
+                csv = convert_df_to_csv(df)
+                st.download_button("⬇️ Download CSV", csv, "HR_Report.csv", "text/csv")
+            else:
+                st.error("⚠️ Please upload candidates and a JD.")
+                
 # --- 3. THE CONTROLLER (WITH SAFETY NET) ---
 if __name__ == "__main__":
     try:
