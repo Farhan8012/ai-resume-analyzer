@@ -119,17 +119,30 @@ def main_dashboard():
 
     # --- SIDEBAR INPUTS ---
     with st.sidebar:
-        st.title("🎛️ Settings")
-        # Added "Bulk Analysis" to the options
-        mode = st.radio("Analysis Mode", ["Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
+        st.title("🎛️ Controls")
+        
+        # --- NEW: ADVANCED SETTINGS ---
+        with st.expander("⚙️ Scoring Settings", expanded=False):
+            st.caption("Customize how the AI ranks candidates.")
+            
+            # 1. Weighted Scoring
+            st.write("⚖️ **Score Weighting**")
+            ats_weight = st.slider("ATS Keyword Importance (%)", 0, 100, 70)
+            sem_weight = 100 - ats_weight
+            st.write(f"🤖 Semantic Importance: **{sem_weight}%**")
+            
+            # 2. Threshold
+            st.write("🚫 **Strict Mode**")
+            cutoff_score = st.number_input("Minimum Passing Score", 0, 100, 50)
+        
         st.divider()
         
-        # JD Input (Common for all modes)
+        # Standard Inputs
+        mode = st.radio("Analysis Mode", ["Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
+        
         st.header("1. Job Description")
         job_description = st.text_area("Paste JD here...", height=200)
-        st.divider()
-
-        # Resume Inputs
+        
         st.header("2. Upload Resume(s)")
         
         if mode == "Single Resume":
@@ -145,7 +158,6 @@ def main_dashboard():
         else: # Bulk Mode
             resume_file = None
             resume_b = None
-            # accept_multiple_files=True allows selecting many files at once
             uploaded_files = st.file_uploader("Upload Candidates (PDF)", type=["pdf"], accept_multiple_files=True)
 
         st.divider()
@@ -295,10 +307,12 @@ def main_dashboard():
                 status_text = st.empty()
                 total_files = len(uploaded_files)
                 
+                # THE LOOP
                 for i, file in enumerate(uploaded_files):
                     status_text.text(f"Analyzing candidate {i+1} of {total_files}: {file.name}...")
                     progress_bar.progress((i + 1) / total_files)
                     
+                    # 1. AI Analysis
                     text = clean_text(extract_text_from_pdf(file))
                     skills = extract_skills_from_text(text)
                     jd_clean = job_description.lower()
@@ -306,24 +320,46 @@ def main_dashboard():
                     match_pct, _, missing = match_skills(skills, jd_skills)
                     sem_score = calculate_semantic_match(text, jd_clean)
                     
+                    # 2. NEW: Weighted Scoring Math
+                    # (ATS% * Weight) + (Semantic% * Weight) = Final Score out of 100
+                    final_score = (match_pct * (ats_weight / 100)) + (sem_score * (sem_weight / 100))
+                    
+                    # 3. NEW: Status (Pass/Fail)
+                    status = "✅ Pass" if final_score >= cutoff_score else "❌ Reject"
+
                     results_list.append({
                         "Candidate Name": file.name,
-                        "ATS Score": match_pct,
-                        "Semantic Score": sem_score,
-                        "Total Score": match_pct + sem_score,
-                        "Missing Skills": ", ".join(list(missing)[:5]) # <--- FIXED!
+                        "Status": status, # New Column
+                        "Final Score": round(final_score, 1), # Rounded
+                        "ATS Match": match_pct,
+                        "Semantic Match": sem_score,
+                        "Missing Skills": ", ".join(list(missing)[:5])
                     })
                     time.sleep(0.5)
 
                 st.success("✅ Analysis Complete!")
                 
+                # Create DataFrame
                 df = pd.DataFrame(results_list)
-                # Sort by Total Score (Highest first)
-                df = df.sort_values(by="Total Score", ascending=False)
                 
+                # Sort by Final Score
+                df = df.sort_values(by="Final Score", ascending=False)
+                
+                # Display Leaderboard
                 st.subheader("🏆 Candidate Leaderboard")
-                st.dataframe(df.style.highlight_max(axis=0, color='#00C896'), use_container_width=True)
                 
+                # Highlight the "Status" column
+                def highlight_status(val):
+                    color = '#d4edda' if val == "✅ Pass" else '#f8d7da' # Green or Red background
+                    return f'background-color: {color}; color: black'
+
+                # Show the interactive table
+                st.dataframe(
+                    df.style.map(highlight_status, subset=['Status'])
+                            .format({"Final Score": "{:.1f}", "ATS Match": "{:.1f}", "Semantic Match": "{:.1f}"}),
+                    use_container_width=True
+                )
+
                 csv = convert_df_to_csv(df)
                 st.download_button("⬇️ Download CSV", csv, "HR_Report.csv", "text/csv")
             else:
