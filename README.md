@@ -74,4 +74,5 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 13:** Compare Mode (A/B Testing for Resumes) ⚔️
 - [x] **Day 14:** Smart Skill Recommendations (Actionable Project Ideas) 🧠
 - [x] **Day 15:** UI Polish & Animations (Lottie + Error Handling) ✨
-- [x] **Day 16:** **Bulk Resume Screening (HR Mode)** 📊
+- [x] **Day 16:** Bulk Resume Screening (HR Mode) 📊
+- [x] **Day 17:** **Customizable Scoring & Thresholds (The Control Panel)** 🎛️

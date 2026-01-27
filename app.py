@@ -296,23 +296,30 @@ def main_dashboard():
     else:
         # ================= BULK MODE (HR) =================
         st.title("📊 Bulk Resume Screening (HR Mode)")
-        
-        # Import needs to be here if not at top
-        from utils.csv_export import convert_df_to_csv 
-        
+        from utils.csv_export import convert_df_to_csv
+        import time
+
+        # Initialize Session State for Bulk Data if not exists
+        if "bulk_results" not in st.session_state:
+            st.session_state.bulk_results = []
+
+        # --- PHASE 1: HEAVY LIFTING (Run AI Only When Button Clicked) ---
         if analyze_button:
             if uploaded_files and job_description:
-                results_list = []
+                
+                # Clear previous results
+                st.session_state.bulk_results = []
+                
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 total_files = len(uploaded_files)
                 
-                # THE LOOP
+                # Run Analysis Loop
                 for i, file in enumerate(uploaded_files):
                     status_text.text(f"Analyzing candidate {i+1} of {total_files}: {file.name}...")
                     progress_bar.progress((i + 1) / total_files)
                     
-                    # 1. AI Analysis
+                    # 1. Extraction & AI
                     text = clean_text(extract_text_from_pdf(file))
                     skills = extract_skills_from_text(text)
                     jd_clean = job_description.lower()
@@ -320,50 +327,64 @@ def main_dashboard():
                     match_pct, _, missing = match_skills(skills, jd_skills)
                     sem_score = calculate_semantic_match(text, jd_clean)
                     
-                    # 2. NEW: Weighted Scoring Math
-                    # (ATS% * Weight) + (Semantic% * Weight) = Final Score out of 100
-                    final_score = (match_pct * (ats_weight / 100)) + (sem_score * (sem_weight / 100))
-                    
-                    # 3. NEW: Status (Pass/Fail)
-                    status = "✅ Pass" if final_score >= cutoff_score else "❌ Reject"
-
-                    results_list.append({
+                    # Store RAW data in Session State (Not the final score yet)
+                    st.session_state.bulk_results.append({
                         "Candidate Name": file.name,
-                        "Status": status, # New Column
-                        "Final Score": round(final_score, 1), # Rounded
                         "ATS Match": match_pct,
                         "Semantic Match": sem_score,
-                        "Missing Skills": ", ".join(list(missing)[:5])
+                        "Missing Skills": list(missing) # Store as list
                     })
-                    time.sleep(0.5)
+                    time.sleep(0.5) # Be nice to API
 
                 st.success("✅ Analysis Complete!")
-                
-                # Create DataFrame
-                df = pd.DataFrame(results_list)
-                
-                # Sort by Final Score
-                df = df.sort_values(by="Final Score", ascending=False)
-                
-                # Display Leaderboard
-                st.subheader("🏆 Candidate Leaderboard")
-                
-                # Highlight the "Status" column
-                def highlight_status(val):
-                    color = '#d4edda' if val == "✅ Pass" else '#f8d7da' # Green or Red background
-                    return f'background-color: {color}; color: black'
-
-                # Show the interactive table
-                st.dataframe(
-                    df.style.map(highlight_status, subset=['Status'])
-                            .format({"Final Score": "{:.1f}", "ATS Match": "{:.1f}", "Semantic Match": "{:.1f}"}),
-                    use_container_width=True
-                )
-
-                csv = convert_df_to_csv(df)
-                st.download_button("⬇️ Download CSV", csv, "HR_Report.csv", "text/csv")
+                st.rerun() # Force refresh to show results immediately
             else:
                 st.error("⚠️ Please upload candidates and a JD.")
+
+        # --- PHASE 2: LIGHT MATH (Run Every Time Slider Moves) ---
+        if st.session_state.bulk_results:
+            
+            # 1. Get Settings from Sidebar
+            # (These variables ats_weight, sem_weight, cutoff_score are already defined in your sidebar code)
+            
+            final_display_list = []
+            
+            # 2. Recalculate Scores INSTANTLY
+            for candidate in st.session_state.bulk_results:
+                final_score = (candidate["ATS Match"] * (ats_weight / 100)) + (candidate["Semantic Match"] * (sem_weight / 100))
+                status = "✅ Pass" if final_score >= cutoff_score else "❌ Reject"
+                
+                final_display_list.append({
+                    "Candidate Name": candidate["Candidate Name"],
+                    "Status": status,
+                    "Final Score": round(final_score, 1),
+                    "ATS Match": candidate["ATS Match"],
+                    "Semantic Match": candidate["Semantic Match"],
+                    "Missing Skills": ", ".join(candidate["Missing Skills"][:5])
+                })
+            
+            # 3. Display Leaderboard
+            df = pd.DataFrame(final_display_list)
+            df = df.sort_values(by="Final Score", ascending=False)
+            
+            st.subheader("🏆 Candidate Leaderboard")
+            
+            def highlight_status(val):
+                color = '#d4edda' if val == "✅ Pass" else '#f8d7da'
+                return f'background-color: {color}; color: black'
+
+            st.dataframe(
+                df.style.map(highlight_status, subset=['Status'])
+                        .format({"Final Score": "{:.1f}", "ATS Match": "{:.1f}", "Semantic Match": "{:.1f}"}),
+                use_container_width=True
+            )
+            
+            # CSV Download
+            csv = convert_df_to_csv(df)
+            st.download_button("⬇️ Download CSV", csv, "HR_Report.csv", "text/csv")
+
+        else:
+            st.error("⚠️ Please upload candidates and a JD.")
                 
 # --- 3. THE CONTROLLER (WITH SAFETY NET) ---
 if __name__ == "__main__":
