@@ -14,6 +14,24 @@ import requests
 from streamlit_lottie import st_lottie
 import time
 
+def check_rate_limit():
+    """
+    Prevents users from spamming the Analyze button.
+    Enforces a 10-second cooldown.
+    """
+    if "last_call" not in st.session_state:
+        st.session_state.last_call = 0
+    
+    current_time = time.time()
+    # Check if less than 10 seconds have passed since last click
+    if current_time - st.session_state.last_call < 10: 
+        wait_time = 10 - int(current_time - st.session_state.last_call)
+        st.warning(f"⏳ Please wait {wait_time} seconds before analyzing again.")
+        st.stop() # <--- Kills the process immediately
+    else:
+        # Update the last call time
+        st.session_state.last_call = current_time
+
 def load_lottieurl(url):
     r = requests.get(url)
     if r.status_code != 200:
@@ -172,6 +190,7 @@ def main_dashboard():
             st.title("🚀 Single Resume Analysis")
             
             if analyze_button:
+                check_rate_limit()
                 if resume_file and job_description:
                     with st.spinner("Processing..."):
                         # Extract & Analyze
@@ -305,6 +324,7 @@ def main_dashboard():
 
         # --- PHASE 1: HEAVY LIFTING (Run AI Only When Button Clicked) ---
         if analyze_button:
+            check_rate_limit()
             if uploaded_files and job_description:
                 
                 # Clear previous results

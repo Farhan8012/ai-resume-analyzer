@@ -1,0 +1,9 @@
+[theme]
+primaryColor = "#00C896"    # A modern "Success Green" (like ChatGPT/Matrix)
+backgroundColor = "#0E1117" # Dark Mode Background
+secondaryBackgroundColor = "#262730" # Card/Sidebar Background
+textColor = "#FAFAFA"
+font = "sans serif"
+
+[server]
+enableCORS = false
