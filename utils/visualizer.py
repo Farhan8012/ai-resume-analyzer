@@ -1,4 +1,8 @@
 import plotly.graph_objects as go
+import plotly.express as px
+from collections import Counter
+import pandas as pd
+from collections import Counter
 
 def plot_gauge_chart(score):
     """
@@ -100,3 +104,59 @@ def plot_comparison(match_a, match_b, semantic_a, semantic_b):
         font=dict(color='white')
     )
     return fig
+
+
+def plot_history_trend(history_data):
+    """
+    Plots the user's ATS and Semantic scores over time.
+    """
+    if not history_data:
+        return None
+        
+    df = pd.DataFrame(history_data)
+    
+    # Melt dataframe for multi-line plot
+    df_melt = df.melt(id_vars=["date"], value_vars=["match_score", "semantic_score"], 
+                      var_name="Score Type", value_name="Score")
+    
+    fig = px.line(df_melt, x="date", y="Score", color="Score Type", 
+                  title="📈 Your Improvement Over Time",
+                  color_discrete_map={"match_score": "#00C896", "semantic_score": "#9B51E0"},
+                  markers=True)
+    
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+    return fig
+
+def plot_top_missing_skills(history_data):
+    """
+    Finds and plots the most frequently missing skills across all scans.
+    """
+    if not history_data:
+        return None
+        
+    all_missing = []
+    for entry in history_data:
+        # missing_skills is stored as a list in the JSON
+        all_missing.extend(entry.get("missing_skills", []))
+        
+    if not all_missing:
+        return None
+        
+    # Count frequency
+    counts = Counter(all_missing)
+    # Get Top 7
+    top_skills = dict(counts.most_common(7))
+    
+    df = pd.DataFrame(list(top_skills.items()), columns=["Skill", "Count"])
+    
+    fig = px.bar(df, x="Count", y="Skill", orientation='h',
+                 title="⚠️ Most Recurring Missing Skills",
+                 color="Count", color_continuous_scale="Reds")
+                 
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", 
+                      font_color="white", yaxis=dict(autorange="reversed"))
+    return fig
+
+
+
+

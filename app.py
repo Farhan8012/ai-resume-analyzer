@@ -13,6 +13,7 @@ from utils.csv_export import convert_df_to_csv
 import requests
 from streamlit_lottie import st_lottie
 import time
+from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison, plot_history_trend, plot_top_missing_skills
 
 def check_rate_limit():
     """
@@ -156,14 +157,61 @@ def main_dashboard():
         st.divider()
         
         # Standard Inputs
-        mode = st.radio("Analysis Mode", ["Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
+        # UPDATED NAVIGATION: Added "Home / Analytics" at the start
+        mode = st.radio("Navigation", ["Home / Analytics", "Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
         
         st.header("1. Job Description")
         job_description = st.text_area("Paste JD here...", height=200)
         
         st.header("2. Upload Resume(s)")
-        
-        if mode == "Single Resume":
+
+
+        # --- LOGIC HANDLING ---
+    
+        # NEW HOME SCREEN BLOCK
+        if mode == "Home / Analytics":
+            st.title("📊 Your Career Analytics")
+            
+            # Get history for the logged-in user
+            uid = st.session_state.get('user_email', st.session_state.user_name)
+            hist = get_user_history(uid)
+            
+            if not hist:
+                st.info("👋 Welcome! Upload your first resume to see analytics here.")
+            else:
+                # Top-Level Metrics
+                latest = hist[-1]
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total Scans", len(hist))
+                with col2:
+                    st.metric("Latest ATS Score", f"{latest['match_score']}%")
+                with col3:
+                    # Calculate improvement (Latest - First)
+                    improvement = latest['match_score'] - hist[0]['match_score']
+                    st.metric("Total Improvement", f"{improvement:.1f}%", delta=f"{improvement:.1f}%")
+
+                st.divider()
+                
+                # Charts Section
+                c1, c2 = st.columns(2)
+                
+                with c1:
+                    fig_trend = plot_history_trend(hist)
+                    if fig_trend:
+                        st.plotly_chart(fig_trend, use_container_width=True)
+                    else:
+                        st.write("Not enough data for trend.")
+                        
+                with c2:
+                    fig_skills = plot_top_missing_skills(hist)
+                    if fig_skills:
+                        st.plotly_chart(fig_skills, use_container_width=True)
+                    else:
+                        st.write("No missing skills found yet! 🎉")
+
+    
+        elif mode == "Single Resume":
             resume_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
             resume_b = None
             uploaded_files = None
@@ -173,7 +221,7 @@ def main_dashboard():
             resume_b = st.file_uploader("Upload Resume B (PDF)", type=["pdf"], key="res_b")
             uploaded_files = None
             
-        else: # Bulk Mode
+        else:
             resume_file = None
             resume_b = None
             uploaded_files = st.file_uploader("Upload Candidates (PDF)", type=["pdf"], accept_multiple_files=True)
