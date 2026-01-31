@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.auth import authenticate, save_user, save_history, get_user_history
 import pandas as pd
+
 from utils.report_generator import generate_pdf_report
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
@@ -14,6 +15,7 @@ import requests
 from streamlit_lottie import st_lottie
 import time
 from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison, plot_history_trend, plot_top_missing_skills
+from utils.interview_prep import generate_interview_questions
 
 def check_rate_limit():
     """
@@ -299,6 +301,22 @@ def main_dashboard():
                         advice = get_ai_feedback(res['cleaned_text'], res['jd_text'], res['missing_skills'])
                         st.session_state.ai_advice = advice
                         st.markdown(advice)
+
+                st.divider()
+                st.subheader("🎙️ Interview Prep")
+                
+                if st.button("🔮 Generate Interview Questions"):
+                    with st.spinner("Reviewing your projects..."):
+                        # Get the text we already extracted
+                        res_text = st.session_state.analysis_results['cleaned_text']
+                        jd_text = st.session_state.analysis_results['jd_text']
+                        
+                        # Call the AI
+                        questions = generate_interview_questions(res_text, jd_text)
+                        
+                        # Display nicely
+                        st.markdown("### 📝 Your Custom Questions")
+                        st.info(questions)
 
                 st.divider()
                 st.subheader("📄 Download Report")
