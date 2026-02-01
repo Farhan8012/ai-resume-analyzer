@@ -16,6 +16,7 @@ from streamlit_lottie import st_lottie
 import time
 from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison, plot_history_trend, plot_top_missing_skills
 from utils.interview_prep import generate_interview_questions
+from utils.cover_letter_generator import generate_cover_letter
 
 def check_rate_limit():
     """
@@ -317,6 +318,37 @@ def main_dashboard():
                         # Display nicely
                         st.markdown("### 📝 Your Custom Questions")
                         st.info(questions)
+                
+                st.divider()
+                st.subheader("✍️ Cover Letter Generator")
+                
+                # Input for Company Name (Optional)
+                company_name = st.text_input("Company Name (Optional)", value="Hiring Team")
+                
+                if st.button("📝 Draft Cover Letter"):
+                    with st.spinner("Connecting your skills to the job..."):
+                        # Get data
+                        res_text = st.session_state.analysis_results['cleaned_text']
+                        jd_text = st.session_state.analysis_results['jd_text']
+                        
+                        # Generate
+                        letter = generate_cover_letter(res_text, jd_text, company_name)
+                        
+                        # Display
+                        st.markdown("### 📄 Your Draft")
+                        st.text_area("Copy your letter:", value=letter, height=400)
+                        
+                        # Save to session state so it doesn't disappear if they click something else
+                        st.session_state.cover_letter = letter
+                        
+                # Download Button (Only shows if letter exists)
+                if "cover_letter" in st.session_state:
+                    st.download_button(
+                        label="⬇️ Download as Text File",
+                        data=st.session_state.cover_letter,
+                        file_name="Cover_Letter.txt",
+                        mime="text/plain"
+                    )
 
                 st.divider()
                 st.subheader("📄 Download Report")

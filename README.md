@@ -76,5 +76,7 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 15:** UI Polish & Animations (Lottie + Error Handling) ✨
 - [x] **Day 16:** Bulk Resume Screening (HR Mode) 📊
 - [x] **Day 17:** Customizable Scoring & Thresholds (The Control Panel) 🎛️
-- [x] **Day 18:** Smart Caching (Real-Time Performance Optimization) ⚡
-- [x] **Day 19:** **Security Audit (Validation & Rate Limiting)** 🛡️
+- [x] **Day 19:** Security Audit (Validation & Rate Limiting) 🛡️
+- [x] **Day 20:** Analytics Dashboard (Visualizing Growth) 📈
+- [x] **Day 21:** AI Interviewer (Custom Question Generator) 🎙️
+- [x] **Day 22:** **Cover Letter Generator (Automated Writing)** ✍️
