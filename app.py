@@ -17,6 +17,7 @@ import time
 from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison, plot_history_trend, plot_top_missing_skills
 from utils.interview_prep import generate_interview_questions
 from utils.cover_letter_generator import generate_cover_letter
+from utils.resume_rewriter import optimize_bullet_point
 
 def check_rate_limit():
     """
@@ -53,7 +54,7 @@ def ui_footer():
     )
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="AI Resume Analyzer", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="AI Resume Analyzer", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
 # --- CUSTOM CSS ---
 def local_css(file_name):
@@ -235,7 +236,7 @@ def main_dashboard():
    # --- LOGIC HANDLING ---
     if mode == "Single Resume":
         # ================= SINGLE MODE =================
-        tab1, tab2 = st.tabs(["📊 Analysis", "📈 History"])
+        tab1, tab2, tab3 = st.tabs(["📊 Analysis", "✍️ AI Rewriter", "📈 History"])
         
         with tab1:
             st.title("🚀 Single Resume Analysis")
@@ -357,7 +358,34 @@ def main_dashboard():
                     pdf_data = generate_pdf_report(st.session_state.user_name, res['match_percentage'], res['semantic_score'], res['missing_skills'], advice_text)
                     st.download_button("⬇️ Download PDF", pdf_data, "report.pdf", "application/pdf")
 
+        # ================= TAB 3: AI REWRITER =================
         with tab2:
+            st.header("✨ AI Bullet Point Improver")
+            st.caption("Turn weak descriptions into powerful accomplishments.")
+            
+            # Input
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                original_text = st.text_area("Paste a weak bullet point here:", height=150, placeholder="Example: Responsible for managing the database...")
+            
+            with col2:
+                st.markdown("<br>", unsafe_allow_html=True) # Spacing
+                if st.button("🚀 Improve It", use_container_width=True):
+                    if original_text:
+                        with st.spinner("Polishing your experience..."):
+                            improved_versions = optimize_bullet_point(original_text)
+                            st.session_state.improved_bullets = improved_versions
+                    else:
+                        st.error("Please paste some text first.")
+
+            # Output
+            if "improved_bullets" in st.session_state:
+                st.divider()
+                st.subheader("💎 Optimized Versions")
+                st.success("Select the best one and fill in the [bracketed] numbers!")
+                st.markdown(st.session_state.improved_bullets)
+
+        with tab3:
             st.header("📈 History")
             uid = st.session_state.get('user_email', st.session_state.user_name)
             hist = get_user_history(uid)
