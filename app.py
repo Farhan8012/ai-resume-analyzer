@@ -18,6 +18,7 @@ from utils.visualizer import plot_gauge_chart, plot_skills_gap, plot_comparison,
 from utils.interview_prep import generate_interview_questions
 from utils.cover_letter_generator import generate_cover_letter
 from utils.resume_rewriter import optimize_bullet_point
+from utils.resume_chat import ask_resume_question
 
 def check_rate_limit():
     """
@@ -236,8 +237,7 @@ def main_dashboard():
    # --- LOGIC HANDLING ---
     if mode == "Single Resume":
         # ================= SINGLE MODE =================
-        tab1, tab2, tab3 = st.tabs(["📊 Analysis", "✍️ AI Rewriter", "📈 History"])
-        
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Analysis", "✍️ AI Rewriter", "💬 Chat with Resume", "📈 History"])
         with tab1:
             st.title("🚀 Single Resume Analysis")
             
@@ -385,7 +385,41 @@ def main_dashboard():
                 st.success("Select the best one and fill in the [bracketed] numbers!")
                 st.markdown(st.session_state.improved_bullets)
 
+        # ================= TAB 3: CHAT WITH RESUME =================
         with tab3:
+            st.header("💬 Ask the Resume")
+            st.caption("Ask specific questions like 'Does he know Docker?' or 'What is his GPA?'")
+            
+            # Chat History Session State
+            if "chat_history" not in st.session_state:
+                st.session_state.chat_history = []
+            
+            # Chat Input
+            user_question = st.text_input("Ask a question about this candidate:", key="resume_query")
+            
+            if st.button("Ask AI", key="ask_btn"):
+                if user_question:
+                    with st.spinner("Reading resume..."):
+                        # Get text from session state
+                        res_text = st.session_state.analysis_results.get('cleaned_text', "")
+                        
+                        if res_text:
+                            answer = ask_resume_question(res_text, user_question)
+                            
+                            # Add to history (Newest first)
+                            st.session_state.chat_history.insert(0, {"q": user_question, "a": answer})
+                        else:
+                            st.error("Please analyze a resume first!")
+            
+            st.divider()
+            
+            # Display History
+            for chat in st.session_state.chat_history:
+                st.chat_message("user").write(chat["q"])
+                st.chat_message("assistant").write(chat["a"])
+                st.divider()
+
+        with tab4:
             st.header("📈 History")
             uid = st.session_state.get('user_email', st.session_state.user_name)
             hist = get_user_history(uid)
