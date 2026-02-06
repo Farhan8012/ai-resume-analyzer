@@ -80,5 +80,6 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 20:** Analytics Dashboard (Visualizing Growth) 📈
 - [x] **Day 21:** AI Interviewer (Custom Question Generator) 🎙️
 - [x] **Day 22:** Cover Letter Generator (Automated Writing) ✍️
-- [x] **Day 23:** The Great Sync (Deployment & Cloud Config) ☁️
-- [x] **Day 24:** **AI Rewriter (Bullet Point Polish)** ✨
+- [x] **Day 23:** The Great Sync (Deployment) ☁️
+- [x] **Day 24:** AI Rewriter (Bullet Point Polish) ✨
+- [x] **Day 25:** **Chat with Resume (RAG)** 💬

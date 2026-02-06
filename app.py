@@ -19,6 +19,7 @@ from utils.interview_prep import generate_interview_questions
 from utils.cover_letter_generator import generate_cover_letter
 from utils.resume_rewriter import optimize_bullet_point
 from utils.resume_chat import ask_resume_question
+from utils.learning_roadmap import generate_study_plan
 
 def check_rate_limit():
     """
@@ -237,7 +238,7 @@ def main_dashboard():
    # --- LOGIC HANDLING ---
     if mode == "Single Resume":
         # ================= SINGLE MODE =================
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Analysis", "✍️ AI Rewriter", "💬 Chat with Resume", "📈 History"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Analysis", "✍️ AI Rewriter", "💬 Chat", "📚 Study Plan", "📈 History"])
         with tab1:
             st.title("🚀 Single Resume Analysis")
             
@@ -419,7 +420,33 @@ def main_dashboard():
                 st.chat_message("assistant").write(chat["a"])
                 st.divider()
 
-        with tab4:
+
+        # ================= TAB 5: STUDY PLAN =================
+        with tab4: # Note: variables are 0-indexed in some langs, but here tab4 is the 4th variable name we made
+            st.header("📚 Specialized Study Plan")
+            st.caption("Turn your 'Missing Skills' into a learning opportunity.")
+            
+            # Check if analysis is done
+            if "analysis_results" in st.session_state and st.session_state.analysis_results.get("missing_skills"):
+                missing = st.session_state.analysis_results["missing_skills"]
+                st.warning(f"⚠️ Skills to learn: {', '.join(missing)}")
+                
+                if st.button("🎓 Generate Crash Course"):
+                    with st.spinner("Designing your curriculum..."):
+                        roadmap = generate_study_plan(missing)
+                        st.session_state.roadmap = roadmap
+                
+                if "roadmap" in st.session_state:
+                    st.divider()
+                    st.markdown(st.session_state.roadmap)
+            
+            elif "analysis_results" in st.session_state and not st.session_state.analysis_results.get("missing_skills"):
+                st.success("🎉 No missing skills found! You are a perfect match!")
+            
+            else:
+                st.info("Please analyze a resume first to identify missing skills.")
+                
+        with tab5:
             st.header("📈 History")
             uid = st.session_state.get('user_email', st.session_state.user_name)
             hist = get_user_history(uid)
