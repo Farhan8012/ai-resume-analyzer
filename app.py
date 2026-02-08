@@ -316,6 +316,7 @@ def main_dashboard():
                         
                         # Call the AI
                         questions = generate_interview_questions(res_text, jd_text)
+                        st.session_state.interview_questions = questions  # <--- SAVE IT
                         
                         # Display nicely
                         st.markdown("### 📝 Your Custom Questions")
@@ -353,11 +354,36 @@ def main_dashboard():
                     )
 
                 st.divider()
-                st.subheader("📄 Download Report")
-                if st.button("Prepare PDF"):
-                    advice_text = st.session_state.get("ai_advice", "No AI advice generated.")
-                    pdf_data = generate_pdf_report(st.session_state.user_name, res['match_percentage'], res['semantic_score'], res['missing_skills'], advice_text)
-                    st.download_button("⬇️ Download PDF", pdf_data, "report.pdf", "application/pdf")
+                st.subheader("📄 Download Full Report")
+                st.caption("Includes your scores, interview questions, and study plan.")
+                
+                if st.button("Prepare PDF Report"):
+                    # Gather all data from Session State
+                    advice_text = st.session_state.get("ai_advice", "No advice generated.")
+                    
+                    # Get the extras (default to None if user didn't generate them)
+                    interview_q = st.session_state.get("interview_questions", None) # Note: we need to save this to state first!
+                    study_plan = st.session_state.get("roadmap", None)
+                    improved_bullets = st.session_state.get("improved_bullets", None) # Check variable name from Day 24
+                    
+                    # Generate PDF
+                    pdf_data = generate_pdf_report(
+                        st.session_state.user_name,
+                        res['match_percentage'],
+                        res['semantic_score'],
+                        res['missing_skills'],
+                        advice_text,
+                        interview_q=interview_q,
+                        study_plan=study_plan,
+                        improved_bullets=improved_bullets
+                    )
+                    
+                    st.download_button(
+                        label="⬇️ Download Full Report",
+                        data=pdf_data,
+                        file_name=f"{st.session_state.user_name}_Resume_Report.pdf",
+                        mime="application/pdf"
+                    )
 
         # ================= TAB 3: AI REWRITER =================
         with tab2:
