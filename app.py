@@ -131,41 +131,42 @@ def login_page():
 
 # --- 2. MAIN DASHBOARD FUNCTION ---
 def main_dashboard():
-    # Sidebar Logout
+    # --- SIDEBAR CONFIGURATION ---
     with st.sidebar:
-        st.write(f"👤 **{st.session_state.user_name}**")
-        if st.button("Logout"):
-            st.session_state.logged_in = False
-            st.session_state.user_name = ""
-            if 'user_email' in st.session_state:
-                del st.session_state.user_email
-            st.rerun()
+        # 1. Branding
+        st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=50) 
+        st.title("AI Career Coach")
+        st.caption("Built by Farhan Ansari")
+        
+        st.divider()
+        
+        # 2. How to Use (Collapsible)
+        with st.expander("ℹ️ How to Use", expanded=False):
+            st.markdown("""
+            1. **Select Mode:** Choose Single, Compare, or Bulk.
+            2. **Paste JD:** Copy the job description.
+            3. **Upload PDF:** Attach your resume.
+            4. **Analyze:** Let AI find the gaps.
+            """)
+            
         st.divider()
 
-    # --- SIDEBAR INPUTS ---
-    with st.sidebar:
-        st.title("🎛️ Controls")
+        # 3. Controls & Navigation
+        st.subheader("🎛️ Dashboard Controls")
         
-        # --- NEW: ADVANCED SETTINGS ---
-        with st.expander("⚙️ Scoring Settings", expanded=False):
+        # --- NEW: ADVANCED SETTINGS (Keep your existing settings code here) ---
+        with st.expander("⚙️ Scoring Logic", expanded=False):
             st.caption("Customize how the AI ranks candidates.")
-            
-            # 1. Weighted Scoring
-            st.write("⚖️ **Score Weighting**")
             ats_weight = st.slider("ATS Keyword Importance (%)", 0, 100, 70)
             sem_weight = 100 - ats_weight
             st.write(f"🤖 Semantic Importance: **{sem_weight}%**")
-            
-            # 2. Threshold
-            st.write("🚫 **Strict Mode**")
             cutoff_score = st.number_input("Minimum Passing Score", 0, 100, 50)
         
         st.divider()
         
-        # Standard Inputs
-        # UPDATED NAVIGATION: Added "Home / Analytics" at the start
         mode = st.radio("Navigation", ["Home / Analytics", "Single Resume", "Compare (A/B Test)", "Bulk Analysis (HR Mode)"])
         
+        # ... (Keep the rest of your Job Description & Upload Inputs here) ...
         st.header("1. Job Description")
         job_description = st.text_area("Paste JD here...", height=200)
         
@@ -245,14 +246,22 @@ def main_dashboard():
             if analyze_button:
                 check_rate_limit()
                 if resume_file and job_description:
-                    with st.spinner("Processing..."):
-                        # Extract & Analyze
+                    # NEW: Interactive Status Container
+                    with st.status("🤖 AI is working its magic...", expanded=True) as status:
+                        
+                        st.write("📄 Extracting text from PDF...")
                         raw_text = extract_text_from_pdf(resume_file)
                         cleaned_text = clean_text(raw_text)
+                        
+                        st.write("🔍 Identifying Key Sections...")
                         sections = extract_sections(cleaned_text)
+                        
+                        st.write("🧠 Analyzing Keywords & Semantics...")
                         resume_skills = extract_skills_from_text(cleaned_text)
                         jd_text = job_description.lower()
                         jd_skills = extract_skills_from_text(jd_text)
+                        
+                        st.write("✨ Calculating Scores...")
                         match_pct, matched, missing = match_skills(resume_skills, jd_skills)
                         sem_score = calculate_semantic_match(cleaned_text, jd_text)
                         
@@ -283,8 +292,8 @@ def main_dashboard():
                         uid = st.session_state.get('user_email', st.session_state.user_name)
                         save_history(uid, match_pct, sem_score, missing)
                         st.toast("✅ Analysis saved!")
-                else:
-                    st.error("⚠️ Please upload a resume and paste a JD.")
+
+                        status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
 
             # Display Single Results
             if st.session_state.analysis_done and st.session_state.get("mode") == "single":
@@ -296,6 +305,18 @@ def main_dashboard():
                     st.plotly_chart(fig, use_container_width=True)
                 with col2:
                     st.metric("Semantic Score", f"{res['semantic_score']}%")
+                
+                st.divider()
+                # --- NEW: DEBUG EXPANDERS (Hidden by default) ---
+                with st.expander("👁️ View Extracted Data (Debug)"):
+                    st.caption("This shows what the AI actually read from your PDF and JD.")
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown("### 📄 Resume Text")
+                        st.text(res['cleaned_text'][:1000] + "...") # Show first 1000 chars
+                    with c2:
+                        st.markdown("### 📋 Job Description")
+                        st.text(res['jd_text'][:1000] + "...")
                 
                 st.divider()
                 st.subheader("🤖 AI Advice")

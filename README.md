@@ -82,4 +82,6 @@ This project fixes that by running **Two Analysis Engines** side-by-side:
 - [x] **Day 22:** Cover Letter Generator (Automated Writing) ✍️
 - [x] **Day 23:** The Great Sync (Deployment) ☁️
 - [x] **Day 24:** AI Rewriter (Bullet Point Polish) ✨
-- [x] **Day 25:** **Chat with Resume (RAG)** 💬
+- [x] **Day 25:** Chat with Resume (RAG) 💬
+- [x] **Day 26:** AI Study Plan (Learning Roadmap) 📚
+- [x] **Day 27:** **Ultimate Report (Full PDF Download)** 📄
