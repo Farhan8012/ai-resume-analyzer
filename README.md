@@ -1,87 +1,75 @@
-# 🚀 AI Resume Analyzer (International Level)
+# 🚀 AI Career Coach: The Ultimate Resume Analyzer
 
-> **A Dual-Engine Resume Analysis Platform built with Python, Streamlit, and NLP.** > *Mimics real-world ATS systems while providing "Semantic" feedback that keywords miss.*
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://farhan-ai-resume.streamlit.app/)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-orange?logo=google&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
 
+> **A full-stack AI Career Assistant that helps job seekers beat the ATS, rewrite their resumes, and prep for interviews.**
 
-## 🧠 The Problem
-Traditional Resume Parsers (ATS) are dumb. They only look for exact keywords.
-- If a job asks for **"Machine Learning"** and you write **"ML"**, you get a **0% score**.
-- If you copy-paste the Job Description in white text, you get **100%**.
+---
 
-## 💡 The Solution: Dual-Engine Logic
-This project fixes that by running **Two Analysis Engines** side-by-side:
+## 🌟 Live Demo
+👉 **[Click here to use the App](https://farhan-ai-resume.streamlit.app/)** *(Note: Replace this link with your actual Streamlit URL)*
 
-| Feature | Engine 1: The "Strict" ATS | Engine 2: The "Smart" AI |
+---
+
+## 🧠 What Problem Does This Solve?
+Job seekers struggle with:
+1.  **ATS Rejection:** "Why did I get rejected instantly?"
+2.  **Generic Advice:** "Your resume needs work" (but doesn't say *where*).
+3.  **Writer's Block:** Not knowing how to phrase bullet points.
+
+**This tool fixes that by mimicking a Senior Technical Recruiter.** It doesn't just "score" you; it rewrites your text, generates cover letters, and creates a 7-day study plan for your missing skills.
+
+---
+
+## 📸 Screenshots
+
+### 1. The Dashboard (Score & Analysis)
+![Dashboard](https://github.com/Farhan8012/ai-resume-analyzer/blob/main/screenshots/dashboard.jpg?raw=true)
+
+### 2. AI Resume Chat (RAG)
+![Chat](https://github.com/Farhan8012/ai-resume-analyzer/blob/main/screenshots/chat.jpg?raw=true)
+
+### 3. Study Plan Generator
+![Roadmap](https://github.com/Farhan8012/ai-resume-analyzer/blob/main/screenshots/roadmap.jpg?raw=true)
+
+---
+
+## 🛠️ Key Features
+
+| Feature | Description | Tech Stack |
 | :--- | :--- | :--- |
-| **Technology** | Keyword Matching (Python Set Operations) | Vector Embeddings (TF-IDF + Cosine Similarity) |
-| **Logic** | Checks for exact word matches (e.g., "Python", "SQL"). | Checks for *contextual meaning* and relevance. |
-| **Goal** | Tells you if you will pass the **Robot**. | Tells you if you are actually **Qualified**. |
+| **📊 ATS Scoring** | Calculates a % match based on Keywords & Semantics. | `TF-IDF`, `Cosine Similarity` |
+| **✨ AI Rewriter** | Rewrites weak bullet points into "Action-Result" statements. | `Google Gemini 1.5 Flash` |
+| **💬 Chat with Resume** | Ask questions like *"Does he know Docker?"* to the PDF. | `RAG (Retrieval Augmented Generation)` |
+| **📚 Smart Study Plan** | Generates a 7-day crash course for missing skills. | `Generative AI` |
+| **📄 Cover Letter** | Auto-drafts a personalized cover letter for the role. | `Prompt Engineering` |
+| **🎙️ Interview Prep** | Generates tough interview questions based on your projects. | `Gemini Pro` |
 
 ---
 
-## ✨ Key Features (Implemented)
-- **📄 PDF Parsing:** Extracts text from PDF resumes while preserving structure.
-- **🧹 NLP Cleaning:** Removes special characters and formatting noise.
-- **🔍 Smart Section Extraction:** Automatically identifies Skills, Education, and Experience sections.
-- **📊 Dual Scoring System:** Displays "Keyword Match" vs. "Semantic Match" scores side-by-side.
-- **📉 Resume Quality Check:**
-    - Flags bullet points that lack **Quantification** (numbers/metrics).
-    - Detects skills listed but **not demonstrated** in the Experience section.
-
----
-
-## 🛠️ Tech Stack
-- **Frontend:** Streamlit
-- **Backend:** Python
-- **NLP & AI:** Scikit-Learn (TF-IDF), NLTK, Regex
-- **PDF Processing:** PDFPlumber
-
----
-
-## 🚀 How to Run Locally
+## ⚙️ Installation (Run Locally)
 
 1. **Clone the Repo**
    ```bash
    git clone [https://github.com/Farhan8012/ai-resume-analyzer.git](https://github.com/Farhan8012/ai-resume-analyzer.git)
-   cd ai-resume-analyzer### Day 2
-- Implemented PDF resume parsing
-- Cleaned extracted text using NLP preprocessing
-- Extracted structured resume sections (Skills, Education, Experience)
+   cd ai-resume-analyzer
 
-2. install dependencies
-   pip install -r requirements.txt
-
-3. run the app
-   streamlit run app.py
+   Install Dependencies
 
 
-## 📅 Development Roadmap (Building in Public)
+2. pip install -r requirements.txt
+Set up Secrets Create a .streamlit/secrets.toml file and add your Google API Key:
 
-- [x] **Day 1:** Project Setup & PDF Extraction
-- [x] **Day 2:** Text Cleaning & Section Segmentation
-- [x] **Day 3:** Basic ATS Keyword Matching
-- [x] **Day 4:** Resume Quality & Quantification Checks
-- [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
-- [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
-- [x] **Day 5:** Semantic Matching Engine (TF-IDF & Cosine Similarity) 🧠
-- [x] **Day 6:** **Advanced Keywords (100+ Skills) & Interactive Visualizations (Plotly)** 📊
-- [x] **Day 7:** **Gemini AI Integration (Generative Feedback & Resume Rewriting)** 🤖
-- [x] **Day 8:** UI Polish (Themes, Custom Styling, Dark Mode)
-- [x] **Day 9:** **Deployment (Hosting on Streamlit Cloud for Free) ☁️ [DONE!]**
-- [x] **Day 10:** **User Authentication (Login/Signup Logic)** 🔐
-- [x] **Day 11:** History Tracking (Saving Resume Scores Over Time) 📈
-- [x] **Day 12:** PDF Report Generation (Downloadable Analysis) 📄
-- [x] **Day 13:** Compare Mode (A/B Testing for Resumes) ⚔️
-- [x] **Day 14:** Smart Skill Recommendations (Actionable Project Ideas) 🧠
-- [x] **Day 15:** UI Polish & Animations (Lottie + Error Handling) ✨
-- [x] **Day 16:** Bulk Resume Screening (HR Mode) 📊
-- [x] **Day 17:** Customizable Scoring & Thresholds (The Control Panel) 🎛️
-- [x] **Day 19:** Security Audit (Validation & Rate Limiting) 🛡️
-- [x] **Day 20:** Analytics Dashboard (Visualizing Growth) 📈
-- [x] **Day 21:** AI Interviewer (Custom Question Generator) 🎙️
-- [x] **Day 22:** Cover Letter Generator (Automated Writing) ✍️
-- [x] **Day 23:** The Great Sync (Deployment) ☁️
-- [x] **Day 24:** AI Rewriter (Bullet Point Polish) ✨
-- [x] **Day 25:** Chat with Resume (RAG) 💬
-- [x] **Day 26:** AI Study Plan (Learning Roadmap) 📚
-- [x] **Day 27:** **Ultimate Report (Full PDF Download)** 📄
+
+3. GOOGLE_API_KEY = "your_api_key_here"
+
+
+4.Run the App
+streamlit run app.py
+🤝 Contribution
+Built with ❤️ by Farhan Ansari.
+
+Feel free to fork this repo and submit Pull Requests!
